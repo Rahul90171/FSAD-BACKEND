@@ -22,6 +22,7 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 
+    // ✅ Generate JWT Token
     public String generateToken(Authentication authentication) {
         CustomUserDetails userPrincipal = (CustomUserDetails) authentication.getPrincipal();
 
@@ -33,12 +34,13 @@ public class JwtTokenProvider {
                 .claim("id", userPrincipal.getId())
                 .claim("role", userPrincipal.getAuthorities().iterator().next().getAuthority())
                 .claim("fullName", userPrincipal.getFullName())
-                .setIssuedAt(new Date())
+                .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
+    // ✅ Get Username
     public String getUsernameFromJWT(String token) {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -49,12 +51,38 @@ public class JwtTokenProvider {
         return claims.getSubject();
     }
 
+    // ✅ Get User ID (FIXED - missing method)
+    public Long getUserIdFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        return claims.get("id", Long.class);
+    }
+
+    // ✅ Get Full Name (FIXED - missing method)
+    public String getFullNameFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        return claims.get("fullName", String.class);
+    }
+
+    // ✅ Validate Token
     public boolean validateToken(String authToken) {
         try {
-            Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(authToken);
+            Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(authToken);
             return true;
         } catch (JwtException | IllegalArgumentException ex) {
-            // Log error
+            // invalid token
         }
         return false;
     }
